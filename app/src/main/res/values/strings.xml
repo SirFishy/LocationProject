@@ -1,6 +1,15 @@
 <resources>
-    <string name="app_name">LocationProject</string>
+    <string name="app_name">Location Finder</string>
 
-    <string name="hello_world">Hello world!</string>
+
+    <!-- UI Text Strings-->
+    <string name="hint_search_text">Enter a location</string>
+    <string name="search_button_text">Search</string>
     <string name="action_settings">Settings</string>
+    <string name="search_radius_text">Search radius:</string>
+    <string-array name="search_radius_array">
+        <item>1 mile</item>
+        <item>5 miles</item>
+        <item>10 miles</item>
+    </string-array>
 </resources>

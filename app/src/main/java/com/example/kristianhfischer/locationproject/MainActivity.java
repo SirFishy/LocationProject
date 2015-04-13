@@ -1,43 +1,80 @@
 package com.example.kristianhfischer.locationproject;
 
-import android.os.AsyncTask;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-
-import java.io.BufferedInputStream;
-import java.io.InputStream;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements View.OnClickListener{
 
-    final String latitude = "39.2833";
-    final String longitude = "-76.6167";
+    private final String TAG = MainActivity.class.getCanonicalName();
 
+    private EditText mLocationSearchEditText;
+    private Button mLocationSearchButton;
+    private MyLocationService myLocationService;
 
-    private final String GOOGLE_KEY_ANDROID = "AIzaSyB5FT_N6HleR3kMR3FY4xlTPim3iLbuXOI";
-    private final String GOOGLE_KEY_SERVER = "AIzaSyCt-3wAPn021Bzbi_SWVidglR9DXNgLEY0";
+    private boolean mBound;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        setContentView(R.layout.activity_main);
-        Double[] params = new Double[3];
-        params[0] = 79.5;
-        params[1] = -49.7;
-        params[2] = 145.0;
-        GoogleDownload task = new GoogleDownload();
-        task.execute("");
-        //GoogleDownload task2 = new GoogleDownload();
-        //task.execute(task2);
+        mLocationSearchEditText = (EditText) findViewById(R.id.locationSearchEditText);
+        mLocationSearchButton = (Button) findViewById(R.id.locationSearchButton);
+        mLocationSearchButton.setOnClickListener(this);
+    }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG, "onStart'd");
+        if(!mBound) {
+            bindMyLocationService();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG, "onPause'd");
+        /*if(mDetecting) {
+            Toast.makeText(MainActivity.this, "Activity Detection Halted", Toast.LENGTH_SHORT).show();
+            mDetecting = false;
+        }*/
+        if(mBound) {
+            unbindMyLocationService();
+            mBound = false;
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "onResume'd");
+        if( !mBound ) {
+            bindMyLocationService();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG, "onStop'd");
+        //Unbind from the service
+        if (mBound) {
+            unbindMyLocationService();
+            mBound = false;
+        }
     }
 
 
@@ -63,36 +100,53 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class GoogleDownload extends AsyncTask<String, Double, String> {
-
-        @Override
-        protected String doInBackground(String... params) {
-            String Url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?" +
-                    "location=" + latitude + "," + longitude + "&radius=500&key=" +
-                    GOOGLE_KEY_SERVER;
-            HttpClient httpClient = new DefaultHttpClient();
-            HttpGet httpGet = new HttpGet(Url);
-            String resultString = "";
-            try {
-                HttpResponse response = httpClient.execute(httpGet);
-                InputStream istream = response.getEntity().getContent();
-                BufferedInputStream bstream = new BufferedInputStream(istream);
-                StringBuffer buffer = new StringBuffer();
-                byte[] input = new byte[256];
-                int len = 0;
-                while( (len = istream.read(input)) != -1) {
-                    buffer.append(new String(input, 0, len));
+    @Override
+    public void onClick(View v) {
+        switch( v.getId() ) {
+            case R.id.locationSearchButton:
+                String searchLocation = mLocationSearchEditText.getText().toString();
+                if(mBound) {
+                    myLocationService.searchForLocation(searchLocation);
+                } else {
+                    bindMyLocationService();
                 }
-                istream.close();
-                Log.e("OUTPUT", "OUTPUT RESPONSE: " + buffer.toString());
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            return resultString;
+                break;
+            default:
+                break;
         }
     }
 
-    
+    private void bindMyLocationService() {
+        Intent boundIntent = new Intent(this, MyLocationService.class);
+        bindService(boundIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private void unbindMyLocationService() {
+        unbindService(mServiceConnection);
+    }
+
+
+    private ServiceConnection mServiceConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MyLocationService.MyBinder binder = (MyLocationService.MyBinder) service;
+            myLocationService = binder.getService();
+            if (myLocationService == null) {
+                Log.d(TAG, "Service obj is indeed null");
+            }
+            mBound = true;
+            //Toast.makeText(MainActivity.this, "bound service started", Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            //Toast.makeText(MainActivity.this, "The service has been disconnected", Toast.LENGTH_SHORT).show();
+
+        }
+    };
+
+
+
+
 }

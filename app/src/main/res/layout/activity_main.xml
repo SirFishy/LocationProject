@@ -8,15 +8,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/locationSearchEditText"
-        android:hint="@string/hint_search_text"
-        android:layout_weight="1"/>
+        android:hint="@string/hint_search_text"/>
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/search_button_text"
-        android:id="@+id/locationSearchButton"
-        android:layout_weight="1"/>
+        android:id="@+id/locationSearchButton"/>
 
     <fragment
         xmlns:tools="http://schemas.android.com/tools"

@@ -25,7 +25,6 @@ import java.io.InputStream;
 
 public class MyLocationService extends Service implements LocationListener {
 
-
     private LocationManager mLocationManager;
     private Location mCurrentLocation;
     private Location mStartingLocation;
@@ -49,7 +48,7 @@ public class MyLocationService extends Service implements LocationListener {
     public void onCreate() {
         super.onCreate();
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        mStartingLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        mStartingLocation = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER); //GPS_PROVIDER); //GPS doesn't work inside
         mCurrentLocation = new Location(mStartingLocation);
         Log.d(TAG, "Starting Latitude: " + mStartingLocation.getLatitude());
         Log.d(TAG, "Starting Longitude: " + mStartingLocation.getLongitude());
@@ -99,6 +98,7 @@ public class MyLocationService extends Service implements LocationListener {
             Log.d(TAG, "Destination Location Created: " + (mDestinationLocation == null));
             return false;
         }
+
         float[] distance = new float[10];
         Location.distanceBetween(mCurrentLocation.getLatitude(),
                 mCurrentLocation.getLongitude(), mDestinationLocation.getLatitude(),

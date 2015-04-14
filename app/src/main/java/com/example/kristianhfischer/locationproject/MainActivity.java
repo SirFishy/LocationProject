@@ -16,11 +16,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 
@@ -42,6 +44,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     private Button mLocationSearchButton;
     private MyLocationService myLocationService;
 
+    private Marker currentLocation;
     private boolean mBound;
 
     @Override
@@ -49,6 +52,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setUpMapIfNeeded();
+
+        MarkerOptions a = new MarkerOptions().position(new LatLng(39.25507075,-76.7094812)).title("Current Location");
+        currentLocation = mMap.addMarker(a);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
@@ -60,50 +66,24 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             @Override
             public void onLocationChanged(Location location) {
                 makeUseOfNewLocation(location);
-                System.out.println("CALLING MAKE USE OF NEW LOCATION!");
-
             }
 
             @Override
-            public void onStatusChanged(String provider, int stat, Bundle extras) {
-                /*
-                if (provider == LocationManager.GPS_PROVIDER){
-                    status = stat;
-                    System.out.println("STATUS CHANGED!!!!!!!!!!!!!!!!!!!");
-                }
-                */
-            }
+            public void onStatusChanged(String provider, int stat, Bundle extras) {}
 
             @Override
-            public void onProviderEnabled(String provider) {
-                /*
-                if (provider == LocationManager.GPS_PROVIDER){
-                    status = AVAILABLE;
-                    //setUpMapIfNeeded();
-                    System.out.println("**********PROVIDER ENABLED!!!!!!!!!!!!!!!!!!!");
-                }
-                */
-            }
+            public void onProviderEnabled(String provider) {}
 
             @Override
-            public void onProviderDisabled(String provider) {
-                /*
-                if (provider == LocationManager.GPS_PROVIDER) {
-                    status = OUT_OF_SERVICE;
-                    System.out.println("PROVIDER DISABLED!!!!**********!!!!!!!!!!!!!!!");
-
-                }
-                */
-            }
+            public void onProviderDisabled(String provider) {}
         };
 
-
-
-        if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) == false){
+        if (!locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)){
             status = OUT_OF_SERVICE;
         }
         else {
             status = AVAILABLE;
+            System.out.println("Status is available");
         }
 
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
@@ -111,25 +91,17 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     }
 
     private void makeUseOfNewLocation(Location location) {
-
         LOCATION = new LatLng(location.getLatitude(), location.getLongitude());
 
-        //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LOCATION, 16));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(LOCATION));
-        //mMap.addMarker(new MarkerOptions().position(new LatLng(35, 25)).title("Marker"));
-
-        mMap.addMarker(new MarkerOptions()
-                .position(LOCATION)
-                .title("LOCATION WORKS IN makeuseofnewlocation"));
-
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LOCATION, 16));
+        currentLocation.setPosition(LOCATION);
     }
 
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
             // Try to obtain the map from the SupportMapFragment.
-            mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map))
-                    .getMap();
+            mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
                 setUpMap();
@@ -138,34 +110,22 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     }
 
     /**
-     * This is where we can add markers or lines, add listeners or move the camera. In this case, we
-     * just add a marker near Africa.
-     * <p/>
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
         if (status == AVAILABLE){
             Location local = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
             LOCATION = new LatLng(local.getLatitude(), local.getLongitude());
-
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(
-                    new LatLng(0,0)));
-
-            mMap.addMarker(new MarkerOptions().position(LOCATION).title("if LOCATION WORKS IN SETUPMAP"));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LOCATION, 16));
+            currentLocation.setPosition(LOCATION);
         }
-        else{
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(
-                    new LatLng(0,0)));
-
-            mMap.addMarker(new MarkerOptions().position(new LatLng(0,0)).title("else LOCATION WORKS IN SETUPMAP"));
-        }
-
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        Log.d(TAG, "onStart'd");
+        Log.d(TAG, "onStart");
+
         if(!mBound) {
             bindMyLocationService();
         }
@@ -174,11 +134,8 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d(TAG, "onPause'd");
-        /*if(mDetecting) {
-            Toast.makeText(MainActivity.this, "Activity Detection Halted", Toast.LENGTH_SHORT).show();
-            mDetecting = false;
-        }*/
+        Log.d(TAG, "onPause");
+
         if(mBound) {
             unbindMyLocationService();
             mBound = false;
@@ -188,7 +145,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume'd");
+        Log.d(TAG, "onResume");
         if( !mBound ) {
             bindMyLocationService();
         }
@@ -198,14 +155,14 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     @Override
     protected void onStop() {
         super.onStop();
-        Log.d(TAG, "onStop'd");
+        Log.d(TAG, "onStop");
+
         //Unbind from the service
         if (mBound) {
             unbindMyLocationService();
             mBound = false;
         }
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -240,6 +197,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                     bindMyLocationService();
                 }
                 break;
+
             default:
                 break;
         }
@@ -261,33 +219,19 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         public void onServiceConnected(ComponentName name, IBinder service) {
             MyLocationService.MyBinder binder = (MyLocationService.MyBinder) service;
             myLocationService = binder.getService();
+
             if (myLocationService == null) {
                 Log.d(TAG, "Service obj is indeed null");
             }
             mBound = true;
-            //Toast.makeText(MainActivity.this, "bound service started", Toast.LENGTH_SHORT).show();
         }
 
         @Override
-        public void onServiceDisconnected(ComponentName name) {
-            //Toast.makeText(MainActivity.this, "The service has been disconnected", Toast.LENGTH_SHORT).show();
-
-        }
+        public void onServiceDisconnected(ComponentName name) {}
     };
-
 
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
-
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                new LatLng(0, 0), 16));
-
-        //mMap.addMarker(new MarkerOptions().position(new LatLng(35, 25)).title("Marker"));
-
-        mMap.addMarker(new MarkerOptions()
-                .position(new LatLng(0,0))
-                .title("MarkerInOnMapReady"));
-
     }
 }

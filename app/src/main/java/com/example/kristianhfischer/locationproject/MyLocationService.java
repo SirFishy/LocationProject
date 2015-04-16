@@ -69,7 +69,7 @@ public class MyLocationService extends Service implements LocationListener {
     public void onLocationChanged(Location location) {
         mCurrentLocation = location;
         if( !mWithinLocationRadius ) {
-            mWithinLocationRadius = checkDistanceToDestination();
+            mWithinLocationRadius = isUserWithinLocationRadius();
         }
     }
 
@@ -93,7 +93,7 @@ public class MyLocationService extends Service implements LocationListener {
         new GoogleSearchLocationTask().execute(locationName);
     }
 
-    private boolean checkDistanceToDestination() {
+    private boolean isUserWithinLocationRadius() {
         if( mStartingLocation == null || mDestinationLocation == null) {
             Log.d(TAG, "Starting Location Created: " + (mStartingLocation == null));
             Log.d(TAG, "Destination Location Created: " + (mDestinationLocation == null));
@@ -160,7 +160,7 @@ public class MyLocationService extends Service implements LocationListener {
         protected void onPostExecute(Location location) {
             super.onPostExecute(location);
             mDestinationLocation = location;
-            checkDistanceToDestination();
+            mWithinLocationRadius = isUserWithinLocationRadius();
             //Pass this to next task
         }
 

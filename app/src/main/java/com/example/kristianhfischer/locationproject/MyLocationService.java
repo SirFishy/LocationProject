@@ -30,8 +30,9 @@ public class MyLocationService extends Service implements LocationListener {
     private Location mStartingLocation;
     private Location mDestinationLocation;
     private IBinder myBinder = new MyBinder();
+    private IMyLocationListener mMyLocationListener;
 
-    private final String GOOGLE_KEY_ANDROID = "AIzaSyB5FT_N6HleR3kMR3FY4xlTPim3iLbuXOI";
+    //private final String GOOGLE_KEY_ANDROID = "AIzaSyB5FT_N6HleR3kMR3FY4xlTPim3iLbuXOI";
     private final String GOOGLE_KEY_SERVER = "AIzaSyCt-3wAPn021Bzbi_SWVidglR9DXNgLEY0";
     private final String TAG = MyLocationService.class.getCanonicalName();
     private final double WITHIN_LOCATION_RADIUS_METERS = 200;
@@ -44,6 +45,12 @@ public class MyLocationService extends Service implements LocationListener {
         }
     }
 
+    public interface IMyLocationListener {
+        public void onDestinationLocationChanged(Location location);
+        public void onCurrentLocationChanged(Location location);
+    }
+
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -53,6 +60,7 @@ public class MyLocationService extends Service implements LocationListener {
         Log.d(TAG, "Starting Latitude: " + mStartingLocation.getLatitude());
         Log.d(TAG, "Starting Longitude: " + mStartingLocation.getLongitude());
         mWithinLocationRadius = false;
+        mMyLocationListener = null;
     }
 
     public MyLocationService() {
@@ -69,6 +77,9 @@ public class MyLocationService extends Service implements LocationListener {
         mCurrentLocation = location;
         if( !mWithinLocationRadius ) {
             mWithinLocationRadius = isUserWithinLocationRadius();
+        }
+        if(mMyLocationListener != null) {
+            mMyLocationListener.onCurrentLocationChanged(location);
         }
     }
 
@@ -90,6 +101,14 @@ public class MyLocationService extends Service implements LocationListener {
     public void searchForLocation(String locationName) {
         mWithinLocationRadius = false;
         new GoogleSearchLocationTask().execute(locationName);
+    }
+
+    public void setMyLocationListener(IMyLocationListener listener) {
+        mMyLocationListener = listener;
+    }
+
+    public void removeMyLocationListener() {
+        mMyLocationListener = null;
     }
 
     private boolean isUserWithinLocationRadius() {
@@ -159,8 +178,16 @@ public class MyLocationService extends Service implements LocationListener {
         @Override
         protected void onPostExecute(Location location) {
             super.onPostExecute(location);
-            mDestinationLocation = location;
-            mWithinLocationRadius = isUserWithinLocationRadius();
+            if( location != null ) {
+                mDestinationLocation = location;
+                mWithinLocationRadius = isUserWithinLocationRadius();
+                if (mMyLocationListener != null) {
+                    mMyLocationListener.onDestinationLocationChanged(location);
+                }
+            } else {
+                Toast.makeText(getApplicationContext(), "Could not find location.", Toast.LENGTH_SHORT).show();
+            }
+
             //Pass this to next task
         }
 

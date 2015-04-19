@@ -1,21 +1,25 @@
 package com.example.kristianhfischer.locationproject;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -43,18 +47,16 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     private EditText mLocationSearchEditText;
     private Button mLocationSearchButton;
     private MyLocationService myLocationService;
+    private Marker mCurrentLocationMarker;
+    private Marker mDestinationLocationMarker;
+    private MyLocationService.IMyLocationListener mILocationListener;
 
-    private Marker currentLocation;
     private boolean mBound;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        setUpMapIfNeeded();
-
-        MarkerOptions a = new MarkerOptions().position(new LatLng(39.25507075,-76.7094812)).title("Current Location");
-        currentLocation = mMap.addMarker(a);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
@@ -62,21 +64,34 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         mLocationSearchButton = (Button) findViewById(R.id.locationSearchButton);
         mLocationSearchButton.setOnClickListener(this);
 
-        LocationListener locationListener = new LocationListener() {
+        mILocationListener = new MyLocationService.IMyLocationListener() {
             @Override
-            public void onLocationChanged(Location location) {
-                makeUseOfNewLocation(location);
+            public void onDestinationLocationChanged(Location location) {
+                updateDestinationLocation(location);
             }
 
             @Override
-            public void onStatusChanged(String provider, int stat, Bundle extras) {}
-
-            @Override
-            public void onProviderEnabled(String provider) {}
-
-            @Override
-            public void onProviderDisabled(String provider) {}
+            public void onCurrentLocationChanged(Location location) {
+                makeUseOfNewLocation(location);
+            }
         };
+
+        mLocationSearchEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    String searchLocation = v.getText().toString();
+                    if(mBound) {
+                        myLocationService.searchForLocation(searchLocation);
+                    } else {
+                        bindMyLocationService();
+                    }
+                    hideSoftKeyboard(MainActivity.this,v);
+                    return true;
+                }
+                return false;
+            }
+        });
 
         if (!locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)){
             status = OUT_OF_SERVICE;
@@ -86,15 +101,32 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             System.out.println("Status is available");
         }
 
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+        setUpMapIfNeeded();
 
+        //MarkerOptions a = new MarkerOptions().title("Current Location").visible(false);
+        //mCurrentLocationMarker = mMap.addMarker(a);
+
+        //MarkerOptions destination = new MarkerOptions().title("Destination").visible(false);
+        //mDestinationLocationMarker = mMap.addMarker(destination);
     }
+
+
 
     private void makeUseOfNewLocation(Location location) {
         LOCATION = new LatLng(location.getLatitude(), location.getLongitude());
-
+        mCurrentLocationMarker.setPosition(LOCATION);
+        if( !mCurrentLocationMarker.isVisible() ) {
+            mCurrentLocationMarker.setVisible(true);
+        }
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LOCATION, 16));
-        currentLocation.setPosition(LOCATION);
+    }
+
+    private void updateDestinationLocation(Location location) {
+        LOCATION = new LatLng(location.getLatitude(), location.getLongitude());
+        mDestinationLocationMarker.setPosition(LOCATION);
+        if( !mDestinationLocationMarker.isVisible() ) {
+            mDestinationLocationMarker.setVisible(true);
+        }
     }
 
     private void setUpMapIfNeeded() {
@@ -117,7 +149,11 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             Location local = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
             LOCATION = new LatLng(local.getLatitude(), local.getLongitude());
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LOCATION, 16));
-            currentLocation.setPosition(LOCATION);
+            MarkerOptions a = new MarkerOptions().title("Current Location").position(LOCATION);
+            mCurrentLocationMarker = mMap.addMarker(a);
+            MarkerOptions destination = new MarkerOptions().title("Destination").
+                    position(new LatLng(0, 0)).visible(false);
+            mDestinationLocationMarker = mMap.addMarker(destination);
         }
     }
 
@@ -219,7 +255,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         public void onServiceConnected(ComponentName name, IBinder service) {
             MyLocationService.MyBinder binder = (MyLocationService.MyBinder) service;
             myLocationService = binder.getService();
-
+            myLocationService.setMyLocationListener(mILocationListener);
             if (myLocationService == null) {
                 Log.d(TAG, "Service obj is indeed null");
             }
@@ -233,5 +269,11 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+    }
+
+    public static void hideSoftKeyboard (Activity activity, View view)
+    {
+        InputMethodManager imm = (InputMethodManager)activity.getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
     }
 }

@@ -117,6 +117,7 @@ public class MyLocationService extends Service implements LocationListener {
 
     }
 
+    //Used to get reference to listener in MainActivity
     public void setMyLocationListener(IMyLocationListener listener) {
         mMyLocationListener = listener;
     }

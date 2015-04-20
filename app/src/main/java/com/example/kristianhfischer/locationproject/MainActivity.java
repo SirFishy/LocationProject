@@ -74,6 +74,8 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         mLocationSearchButton = (Button) findViewById(R.id.locationSearchButton);
         mLocationSearchButton.setOnClickListener(this);
 
+        //Interface to location service to receive updates for the current location
+        //and destination location
         mILocationListener = new MyLocationService.IMyLocationListener() {
             @Override
             public void onDestinationLocationChanged(Location location) {
@@ -86,6 +88,10 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             }
         };
 
+        /*
+         * This code changes the "Enter" key on the soft key board to a "search" button so
+         * that users can search for the location without having to click the "search" button
+         */
         mLocationSearchEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -112,6 +118,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
         setUpMapIfNeeded();
 
+        /*
+         * Load any marker info that was reset during phone rotation or reloading app
+         */
         if( savedInstanceState != null) {
             if( savedInstanceState.getBoolean(CURRENT_SAVED)) {
                 mCurrentLocationMarker.setPosition(new LatLng(
@@ -131,16 +140,13 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
             }
         }
-
-        //MarkerOptions a = new MarkerOptions().title("Current Location").visible(false);
-        //mCurrentLocationMarker = mMap.addMarker(a);
-
-        //MarkerOptions destination = new MarkerOptions().title("Destination").visible(false);
-        //mDestinationLocationMarker = mMap.addMarker(destination);
     }
 
+    /*
+     * Save marker info so that it can be loaded if phone is rotated
+     */
     public void onSaveInstanceState(Bundle savedInstanceState) {
-        // Save the user's current game state
+        //User's current location, if any
         if( mCurrentLocationMarker != null) {
             if( mCurrentLocationMarker.isVisible() ) {
                 savedInstanceState.putBoolean(CURRENT_SAVED, new Boolean(true));
@@ -151,7 +157,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             }
 
         }
-
+        //User's destination location, if any
         if( mDestinationLocationMarker != null ) {
             if( mDestinationLocationMarker.isVisible() ) {
                 savedInstanceState.putBoolean(DESTINATION_SAVED, new Boolean(true));
@@ -167,8 +173,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         super.onSaveInstanceState(savedInstanceState);
     }
 
-
-
+    //Update current marker if current location changes
     private void makeUseOfNewLocation(Location location) {
         LOCATION = new LatLng(location.getLatitude(), location.getLongitude());
         mCurrentLocationMarker.setPosition(LOCATION);
@@ -178,6 +183,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LOCATION, 16));
     }
 
+    /*
+     *Update location marker based on search results
+     */
     private void updateDestinationLocation(Location location) {
         LOCATION = new LatLng(location.getLatitude(), location.getLongitude());
         Log.d(TAG, "Setting title to: " + mDestinationName);
@@ -222,8 +230,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     @Override
     protected void onStart() {
         super.onStart();
-        Log.d(TAG, "onStart");
-
         if(!mBound) {
             bindMyLocationService();
         }
@@ -232,8 +238,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d(TAG, "onPause");
-
         if(mBound) {
             unbindMyLocationService();
             mBound = false;
@@ -243,7 +247,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume");
         if( !mBound ) {
             bindMyLocationService();
         }
@@ -253,7 +256,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     @Override
     protected void onStop() {
         super.onStop();
-        Log.d(TAG, "onStop");
 
         //Unbind from the service
         if (mBound) {
@@ -300,6 +302,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         }
     }
 
+    /*
+     * Tasks performed after user clicks the "Search" button
+     */
     private void performSearch() {
         String searchLocation = mLocationSearchEditText.getText().toString();
         mDestinationName = new String(searchLocation);

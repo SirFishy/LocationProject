@@ -59,6 +59,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     private String mDestinationName;
 
     private boolean mBound;
+    private boolean mDestinationSaved;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,6 +122,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         if( savedInstanceState != null) {
 
             if( savedInstanceState.getBoolean(DESTINATION_SAVED)) {
+                mDestinationSaved = true;
                 mDestinationLocationMarker.setPosition(new LatLng(
                         savedInstanceState.getDouble(DESTINATION_LATITUDE),
                         savedInstanceState.getDouble(DESTINATION_LONGITUDE)));
@@ -138,7 +140,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
      * Save marker info so that it can be loaded if phone is rotated
      */
     public void onSaveInstanceState(Bundle savedInstanceState) {
-        
+
         //User's destination location, if any
         if( mDestinationLocationMarker != null ) {
             if( mDestinationLocationMarker.isVisible() ) {
@@ -312,8 +314,8 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             MyLocationService.MyBinder binder = (MyLocationService.MyBinder) service;
             myLocationService = binder.getService();
             myLocationService.setMyLocationListener(mILocationListener);
-            if (myLocationService == null) {
-                Log.d(TAG, "Service obj is indeed null");
+            if( mDestinationSaved) {
+                myLocationService.setDestinationLocation(mDestinationLocationMarker.getPosition());
             }
             mBound = true;
         }

@@ -22,6 +22,7 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;
+import java.net.URLEncoder;
 
 public class MyLocationService extends Service implements LocationListener {
 
@@ -100,7 +101,20 @@ public class MyLocationService extends Service implements LocationListener {
 
     public void searchForLocation(String locationName) {
         mWithinLocationRadius = false;
-        new GoogleSearchLocationTask().execute(locationName);
+        if(locationName != null) {
+            locationName.trim();
+            if( locationName.contains(" ") ) {
+                //HTTP Get request for Google Places API doesn't do well with spaces
+                //Replacing spaces with %20 and adding qutoes around the location with %22 as
+                //suggested by stack overflow
+                locationName = locationName.replaceAll("\\s", "%20");
+                locationName = "%22" + locationName + "%22";
+            }
+            if( !locationName.isEmpty() ) {
+                new GoogleSearchLocationTask().execute(locationName);
+            }
+        }
+
     }
 
     public void setMyLocationListener(IMyLocationListener listener) {
@@ -143,10 +157,14 @@ public class MyLocationService extends Service implements LocationListener {
                     "&rankby=distance" +
                     "&name=" + locationKeyword +
                     "&key=" + GOOGLE_KEY_SERVER;
-            HttpClient httpClient = new DefaultHttpClient();
-            HttpGet httpGet = new HttpGet(Url);
+            String encodedUrl;
+
+
             Location resultLocation = null;
             try {
+                encodedUrl = URLEncoder.encode(Url, "UTF-8");
+                HttpClient httpClient = new DefaultHttpClient();
+                HttpGet httpGet = new HttpGet(Url);
                 HttpResponse response = httpClient.execute(httpGet);
                 InputStream istream = response.getEntity().getContent();
                 BufferedInputStream bstream = new BufferedInputStream(istream);

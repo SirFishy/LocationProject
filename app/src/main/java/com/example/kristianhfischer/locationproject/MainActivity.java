@@ -40,16 +40,26 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     public static final int AVAILABLE = 2;
     public static int status;
 
+    private static final String DESTINATION_LATITUDE = "Dest_lat";
+    private static final String DESTINATION_LONGITUDE = "Dest_lng";
+    private static final String DESTINATION_SAVED = "Dest_saved";
+    private static final String DESTINATION_NAME = "Dest_name";
+    private static final String CURRENT_LATITUDE = "Current_lat";
+    private static final String CURRENT_LONGITUDE = "Current_lng";
+    private static final String CURRENT_SAVED = "Current_saved";
+
     static LatLng LOCATION;
 
     private final String TAG = MainActivity.class.getCanonicalName();
 
     private EditText mLocationSearchEditText;
     private Button mLocationSearchButton;
-    private MyLocationService myLocationService;
     private Marker mCurrentLocationMarker;
     private Marker mDestinationLocationMarker;
+    private MyLocationService myLocationService;
     private MyLocationService.IMyLocationListener mILocationListener;
+
+    private String mDestinationName;
 
     private boolean mBound;
 
@@ -103,11 +113,59 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
         setUpMapIfNeeded();
 
+        if( savedInstanceState != null) {
+            if( savedInstanceState.getBoolean(CURRENT_SAVED)) {
+                mCurrentLocationMarker.setPosition(new LatLng(
+                        savedInstanceState.getDouble(CURRENT_LATITUDE),
+                    savedInstanceState.getDouble(CURRENT_LONGITUDE)));
+            }
+
+            if( savedInstanceState.getBoolean(DESTINATION_SAVED)) {
+                mDestinationLocationMarker.setPosition(new LatLng(
+                        savedInstanceState.getDouble(DESTINATION_LATITUDE),
+                        savedInstanceState.getDouble(DESTINATION_LONGITUDE)));
+                mDestinationName = savedInstanceState.getString(DESTINATION_NAME);
+                Log.d(TAG, "Setting title to: " + mDestinationName);
+                mDestinationLocationMarker.setTitle(
+                        mDestinationName);
+                mDestinationLocationMarker.setVisible(true);
+
+            }
+        }
+
         //MarkerOptions a = new MarkerOptions().title("Current Location").visible(false);
         //mCurrentLocationMarker = mMap.addMarker(a);
 
         //MarkerOptions destination = new MarkerOptions().title("Destination").visible(false);
         //mDestinationLocationMarker = mMap.addMarker(destination);
+    }
+
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        // Save the user's current game state
+        if( mCurrentLocationMarker != null) {
+            if( mCurrentLocationMarker.isVisible() ) {
+                savedInstanceState.putBoolean(CURRENT_SAVED, new Boolean(true));
+                savedInstanceState.putDouble(CURRENT_LATITUDE, mCurrentLocationMarker.getPosition().latitude);
+                savedInstanceState.putDouble(CURRENT_LONGITUDE, mCurrentLocationMarker.getPosition().longitude);
+            } else {
+                savedInstanceState.putBoolean(CURRENT_SAVED, new Boolean(false));
+            }
+
+        }
+
+        if( mDestinationLocationMarker != null ) {
+            if( mDestinationLocationMarker.isVisible() ) {
+                savedInstanceState.putBoolean(DESTINATION_SAVED, new Boolean(true));
+                savedInstanceState.putDouble(DESTINATION_LATITUDE, mDestinationLocationMarker.getPosition().latitude);
+                savedInstanceState.putDouble(DESTINATION_LONGITUDE, mDestinationLocationMarker.getPosition().longitude);
+                savedInstanceState.putString(DESTINATION_NAME, mDestinationName);
+            } else {
+                savedInstanceState.putBoolean(DESTINATION_SAVED, new Boolean(false));
+            }
+        }
+
+        // Always call the superclass so it can save the view hierarchy state
+        super.onSaveInstanceState(savedInstanceState);
     }
 
 
@@ -125,7 +183,10 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         LOCATION = new LatLng(location.getLatitude(), location.getLongitude());
         mDestinationLocationMarker.setPosition(LOCATION);
         if( !mDestinationLocationMarker.isVisible() ) {
+            Log.d(TAG, "Setting title to: " + mDestinationName);
+            mDestinationLocationMarker.setTitle(mDestinationName);
             mDestinationLocationMarker.setVisible(true);
+
         }
     }
 
@@ -228,6 +289,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             case R.id.locationSearchButton:
                 String searchLocation = mLocationSearchEditText.getText().toString();
                 if(mBound) {
+                    mDestinationName = new String(searchLocation);
                     myLocationService.searchForLocation(searchLocation);
                 } else {
                     bindMyLocationService();
@@ -245,6 +307,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     }
 
     private void unbindMyLocationService() {
+        myLocationService.removeMyLocationListener();
         unbindService(mServiceConnection);
     }
 

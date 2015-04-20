@@ -44,9 +44,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     private static final String DESTINATION_LONGITUDE = "Dest_lng";
     private static final String DESTINATION_SAVED = "Dest_saved";
     private static final String DESTINATION_NAME = "Dest_name";
-    private static final String CURRENT_LATITUDE = "Current_lat";
-    private static final String CURRENT_LONGITUDE = "Current_lng";
-    private static final String CURRENT_SAVED = "Current_saved";
 
     static LatLng LOCATION;
 
@@ -122,11 +119,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
          * Load any marker info that was reset during phone rotation or reloading app
          */
         if( savedInstanceState != null) {
-            if( savedInstanceState.getBoolean(CURRENT_SAVED)) {
-                mCurrentLocationMarker.setPosition(new LatLng(
-                        savedInstanceState.getDouble(CURRENT_LATITUDE),
-                    savedInstanceState.getDouble(CURRENT_LONGITUDE)));
-            }
 
             if( savedInstanceState.getBoolean(DESTINATION_SAVED)) {
                 mDestinationLocationMarker.setPosition(new LatLng(
@@ -146,17 +138,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
      * Save marker info so that it can be loaded if phone is rotated
      */
     public void onSaveInstanceState(Bundle savedInstanceState) {
-        //User's current location, if any
-        if( mCurrentLocationMarker != null) {
-            if( mCurrentLocationMarker.isVisible() ) {
-                savedInstanceState.putBoolean(CURRENT_SAVED, new Boolean(true));
-                savedInstanceState.putDouble(CURRENT_LATITUDE, mCurrentLocationMarker.getPosition().latitude);
-                savedInstanceState.putDouble(CURRENT_LONGITUDE, mCurrentLocationMarker.getPosition().longitude);
-            } else {
-                savedInstanceState.putBoolean(CURRENT_SAVED, new Boolean(false));
-            }
-
-        }
+        
         //User's destination location, if any
         if( mDestinationLocationMarker != null ) {
             if( mDestinationLocationMarker.isVisible() ) {

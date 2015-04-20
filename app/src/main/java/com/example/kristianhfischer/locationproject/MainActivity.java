@@ -90,9 +90,8 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                    String searchLocation = v.getText().toString();
                     if(mBound) {
-                        myLocationService.searchForLocation(searchLocation);
+                        performSearch();
                     } else {
                         bindMyLocationService();
                     }
@@ -181,12 +180,14 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
     private void updateDestinationLocation(Location location) {
         LOCATION = new LatLng(location.getLatitude(), location.getLongitude());
+        Log.d(TAG, "Setting title to: " + mDestinationName);
         mDestinationLocationMarker.setPosition(LOCATION);
-        if( !mDestinationLocationMarker.isVisible() ) {
-            Log.d(TAG, "Setting title to: " + mDestinationName);
-            mDestinationLocationMarker.setTitle(mDestinationName);
+        mDestinationLocationMarker.setTitle(mDestinationName);
+        //Refresh marker title
+        mDestinationLocationMarker.hideInfoWindow();
+        mDestinationLocationMarker.showInfoWindow();
+        if( !mDestinationLocationMarker.isVisible()) {
             mDestinationLocationMarker.setVisible(true);
-
         }
     }
 
@@ -287,10 +288,8 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     public void onClick(View v) {
         switch( v.getId() ) {
             case R.id.locationSearchButton:
-                String searchLocation = mLocationSearchEditText.getText().toString();
                 if(mBound) {
-                    mDestinationName = new String(searchLocation);
-                    myLocationService.searchForLocation(searchLocation);
+                    performSearch();
                 } else {
                     bindMyLocationService();
                 }
@@ -299,6 +298,13 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             default:
                 break;
         }
+    }
+
+    private void performSearch() {
+        String searchLocation = mLocationSearchEditText.getText().toString();
+        mDestinationName = new String(searchLocation);
+        Log.d(TAG, "The new location is: " + mDestinationName);
+        myLocationService.searchForLocation(searchLocation);
     }
 
     private void bindMyLocationService() {

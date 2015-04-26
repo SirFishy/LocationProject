@@ -21,11 +21,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -172,7 +174,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         if( !mCurrentLocationMarker.isVisible() ) {
             mCurrentLocationMarker.setVisible(true);
         }
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LOCATION, 16));
+        //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LOCATION, 16));
     }
 
     /*
@@ -183,12 +185,24 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         Log.d(TAG, "Setting title to: " + mDestinationName);
         mDestinationLocationMarker.setPosition(LOCATION);
         mDestinationLocationMarker.setTitle(mDestinationName);
+
         //Refresh marker title
         mDestinationLocationMarker.hideInfoWindow();
         mDestinationLocationMarker.showInfoWindow();
         if( !mDestinationLocationMarker.isVisible()) {
             mDestinationLocationMarker.setVisible(true);
         }
+
+        //Move camera on new destination received to both markers
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        builder.include(mDestinationLocationMarker.getPosition());
+        builder.include(mCurrentLocationMarker.getPosition());
+        LatLngBounds bounds = builder.build();
+        int padding = 10;
+        CameraUpdate centerOfPoints = CameraUpdateFactory.newLatLngBounds(bounds, padding);
+
+        mMap.moveCamera(centerOfPoints);
+        mMap.moveCamera(CameraUpdateFactory.zoomOut());
     }
 
     private void setUpMapIfNeeded() {
@@ -209,6 +223,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     private void setUpMap() {
         if (status == AVAILABLE){
             Location local = locationManager.getLastKnownLocation(BESTLOCATIONPROVIDER);
+
             LOCATION = new LatLng(local.getLatitude(), local.getLongitude());
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LOCATION, 16));
             MarkerOptions a = new MarkerOptions().title("Current Location").position(LOCATION);
@@ -216,6 +231,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             MarkerOptions destination = new MarkerOptions().title("Destination").
                     position(new LatLng(0, 0)).visible(false);
             mDestinationLocationMarker = mMap.addMarker(destination);
+
         }
     }
 

@@ -39,8 +39,8 @@ public class MyLocationService extends Service implements LocationListener {
     private final String GOOGLE_KEY_SERVER = "AIzaSyCt-3wAPn021Bzbi_SWVidglR9DXNgLEY0";
     private final String TAG = MyLocationService.class.getCanonicalName();
     private final double WITHIN_LOCATION_RADIUS_METERS = 200;
-    private final float MINIMUM_UPDATE_DISTANCE_METERS = 1;
-    private final long MINIMUM_UPDATE_TIME_MILISECONDS = 2000;
+    private final float MINIMUM_UPDATE_DISTANCE_METERS = 0.5f;
+    private final long MINIMUM_UPDATE_TIME_MILISECONDS = 1000;
 
     private String BESTLOCATIONPROVIDER;
 
@@ -143,11 +143,13 @@ public class MyLocationService extends Service implements LocationListener {
 
     //Used to get reference to listener in MainActivity
     public void setMyLocationListener(IMyLocationListener listener) {
-        if( mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-            mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-                    MINIMUM_UPDATE_TIME_MILISECONDS, MINIMUM_UPDATE_DISTANCE_METERS, this);
-        } else if( mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+
+        if( mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                    MINIMUM_UPDATE_TIME_MILISECONDS, MINIMUM_UPDATE_DISTANCE_METERS, this);
+        }
+        else if( mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+            mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
                     MINIMUM_UPDATE_TIME_MILISECONDS, MINIMUM_UPDATE_DISTANCE_METERS, this);
         }
         mMyLocationListener = listener;

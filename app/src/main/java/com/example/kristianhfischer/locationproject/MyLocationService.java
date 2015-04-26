@@ -42,6 +42,7 @@ public class MyLocationService extends Service implements LocationListener {
     private final float MINIMUM_UPDATE_DISTANCE_METERS = 1;
     private final long MINIMUM_UPDATE_TIME_MILISECONDS = 2000;
 
+    private String BESTLOCATIONPROVIDER;
 
     private boolean mWithinLocationRadius;
 
@@ -61,7 +62,16 @@ public class MyLocationService extends Service implements LocationListener {
     public void onCreate() {
         super.onCreate();
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        mStartingLocation = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER); //GPS_PROVIDER); //GPS doesn't work inside
+
+        if (mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            BESTLOCATIONPROVIDER = LocationManager.GPS_PROVIDER;
+        }
+        else {
+            BESTLOCATIONPROVIDER = LocationManager.NETWORK_PROVIDER;
+        }
+
+
+        mStartingLocation = mLocationManager.getLastKnownLocation(BESTLOCATIONPROVIDER);
         mCurrentLocation = new Location(mStartingLocation);
         Log.d(TAG, "Starting Latitude: " + mStartingLocation.getLatitude());
         Log.d(TAG, "Starting Longitude: " + mStartingLocation.getLongitude());

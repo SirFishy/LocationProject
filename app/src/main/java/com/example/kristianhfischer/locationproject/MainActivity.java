@@ -38,7 +38,8 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     public static final int OUT_OF_SERVICE = 0;
     public static final int TEMPORARILY_UNAVAILABLE = 1;
     public static final int AVAILABLE = 2;
-    public static int status;
+    private static int status;
+    private String BESTLOCATIONPROVIDER;
 
     private static final String DESTINATION_LATITUDE = "Dest_lat";
     private static final String DESTINATION_LONGITUDE = "Dest_lng";
@@ -106,12 +107,19 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             }
         });
 
-        if (!locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)){
+        if (!locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) && !locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
             status = OUT_OF_SERVICE;
         }
         else {
             status = AVAILABLE;
             System.out.println("Status is available");
+
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                BESTLOCATIONPROVIDER = LocationManager.GPS_PROVIDER;
+            }
+            else {
+                BESTLOCATIONPROVIDER = LocationManager.NETWORK_PROVIDER;
+            }
         }
 
         setUpMapIfNeeded();
@@ -200,7 +208,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
      */
     private void setUpMap() {
         if (status == AVAILABLE){
-            Location local = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            Location local = locationManager.getLastKnownLocation(BESTLOCATIONPROVIDER);
             LOCATION = new LatLng(local.getLatitude(), local.getLongitude());
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LOCATION, 16));
             MarkerOptions a = new MarkerOptions().title("Current Location").position(LOCATION);
@@ -279,6 +287,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 } else {
                     bindMyLocationService();
                 }
+                hideSoftKeyboard(MainActivity.this,v);
                 break;
 
             default:
